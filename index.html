@@ -321,21 +321,21 @@ function initThree(){var cv=$('three');renderer=new T3.WebGLRenderer({canvas:cv,
 function addG(o){scene.add(o);G3.push(o);return o;}
 function box(w,h,d,c,x,y,z,o){var m=new T3.Mesh(new T3.BoxGeometry(w,h,d),mat(c,o));m.position.set(x,y,z);return addG(m);}
 function clear3D(){G3.forEach(function(o){scene.remove(o);});G3=[];POOL.concat(EPOOL).forEach(function(o){scene.remove(o);});POOL=[];EPOOL=[];TAGS.forEach(function(t){if(t.el)t.el.remove();});TAGS=[];}
-function build3D(){clear3D();if(PART==='game')return;var v=vac();
+function build3D(){clear3D();var v=vac();
   var edges=new T3.LineSegments(new T3.EdgesGeometry(new T3.BoxGeometry(2*BX,2*BY,2*BZ)),new T3.LineBasicMaterial({color:new T3.Color(css('--muted')),transparent:true,opacity:0.7}));addG(edges);
   tag('ion volume, about 1 cm across',V(BX*0.2,BY+0.5,-BZ));
   /* filament: a coil on the left */
-  var pts=[];for(var i=0;i<=160;i++){var t=i/160,a=t*Math.PI*2*9;pts.push(V(-BX-0.7+0.18*Math.cos(a),-1.1+2.2*t,0.18*Math.sin(a)));}var tube=new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3(pts),300,0.05,6,false),new T3.MeshBasicMaterial({color:v?0xFFB15C:0xE07B1F}));addG(tube);
+  var pts=[];for(var i=0;i<=160;i++){var t=i/160,a=t*Math.PI*2*9;pts.push(V(-BX-0.7+0.18*Math.cos(a),-1.1+2.2*t,0.18*Math.sin(a)));}var tube=new T3.Mesh(new T3.TubeGeometry(new T3.CatmullRomCurve3(pts),300,0.05,6,false),new T3.MeshBasicMaterial({color:v?0xFFB15C:0xE07B1F}));addGrp(addG(tube),'fil');
   tag('hot filament: emits electrons',V(-BX-0.7,1.6,0));
-  box(0.12,2.0,1.6,v?0xC9A07F:0xB77C5E,BX+0.5,0,0);tag('electron trap (+)',V(BX+0.6,1.4,0));
-  box(2*BX*0.8,2*BY*0.8,0.12,v?0x9AA7B3:0x8A96A3,0,0,-BZ-0.4,0.8);tag('repeller (a few volts +): pushes ions out',V(BX*0.75,BY*0.85,-BZ-0.4));
-  [BZ+0.6,BZ+1.4].forEach(function(z,k){box(2*BX*0.3,2*BY*0.6,0.08,v?0x7FB8FF:0x3D7CC9,-BX*0.38,0,z,0.35);box(2*BX*0.3,2*BY*0.6,0.08,v?0x7FB8FF:0x3D7CC9,BX*0.38,0,z,0.35);});tag('ion lenses → mass analyzer',V(0,BY+0.4,BZ+1.4));
+  addGrp(box(0.12,2.0,1.6,v?0xC9A07F:0xB77C5E,BX+0.5,0,0),'trap');tag('electron trap (+)',V(BX+0.6,1.4,0));
+  addGrp(box(2*BX*0.8,2*BY*0.8,0.12,v?0x9AA7B3:0x8A96A3,0,0,-BZ-0.4,0.8),'rep');tag('repeller (a few volts +): pushes ions out',V(BX*0.75,BY*0.85,-BZ-0.4));
+  [BZ+0.6,BZ+1.4].forEach(function(z,k){addGrp(box(2*BX*0.3,2*BY*0.6,0.08,v?0x7FB8FF:0x3D7CC9,-BX*0.38,0,z,0.35),'lens');addGrp(box(2*BX*0.3,2*BY*0.6,0.08,v?0x7FB8FF:0x3D7CC9,BX*0.38,0,z,0.35),'lens');});tag('ion lenses → mass analyzer',V(0,BY+0.4,BZ+1.4));
   var inl=new T3.Mesh(new T3.CylinderGeometry(0.28,0.28,2.4,20,1,true),mat(v?0x9AA7B3:0x8A96A3,0.9));inl.position.set(-1.2,BY+1.2,-0.8);addG(inl);tag('sample in (GC column)',V(-1.2,BY+2.6,-0.8));
-  BEAM=new T3.Mesh(new T3.CylinderGeometry(0.3,0.3,1,16,1,true),new T3.MeshBasicMaterial({color:new T3.Color(css('--minus')),transparent:true,opacity:0.13,side:T3.DoubleSide,depthWrite:false}));BEAM.rotation.z=Math.PI/2;addG(BEAM);
+  BEAM=new T3.Mesh(new T3.CylinderGeometry(0.3,0.3,1,16,1,true),new T3.MeshBasicMaterial({color:new T3.Color(css('--minus')),transparent:true,opacity:0.13,side:T3.DoubleSide,depthWrite:false}));BEAM.rotation.z=Math.PI/2;addGrp(addG(BEAM),'beam');
   tag('electron beam, '+S.eV+' eV',V(-1,-0.75,0.6),'beam');
   for(var k=0;k<46;k++){var e=new T3.Mesh(new T3.SphereGeometry(0.055,8,6),new T3.MeshBasicMaterial({color:new T3.Color(css('--minus'))}));scene.add(e);EPOOL.push(e);}
-  tag('pressure '+fmtP(S.P),V(BX,-BY-0.5,BZ));DIRTY=true;}
-function syncScene(){if(PART==='game'||!BEAM)return;var be=beamEnd(),len=Math.max(0.05,be+BX+0.2);BEAM.scale.set(1,len,1);BEAM.position.set(-BX-0.2+len/2,0,0);
+  applyView(PART);tag('pressure '+fmtP(S.P),V(BX,-BY-0.5,BZ));DIRTY=true;}
+function syncScene(){if(!BEAM)return;if(PART==='game'){POOL.forEach(function(m){m.visible=false;});EPOOL.forEach(function(e){e.visible=false;});return;}var be=beamEnd(),len=Math.max(0.05,be+BX+0.2);BEAM.scale.set(1,len,1);BEAM.position.set(-BX-0.2+len/2,0,0);
   while(POOL.length<PARTS.length){var m=new T3.Mesh(new T3.SphereGeometry(1,12,9),new T3.MeshBasicMaterial({color:0x999999}));scene.add(m);POOL.push(m);}
   POOL.forEach(function(m,i){var p=PARTS[i];m.visible=!!p;if(!p)return;m.position.set(p.x,p.y,p.z);var k=p.kind,cc=k==='m'?col(2):k==='f'?col(1):css('--muted'),r=k==='m'?0.2:k==='f'?0.17:k==='fn'?0.09:0.13;m.scale.setScalar(r);m.material.color=new T3.Color(cc);});
   EPOOL.forEach(function(e,i){var q=ELECS[i];e.visible=!!q&&C.eff>=0;if(q)e.position.set(q.x,q.y,q.z);});}
@@ -349,6 +349,16 @@ function bindOrbit(cv){var pts={},last=null,pinch=0;
   function up(e){delete pts[e.pointerId];pinch=0;}cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
   cv.addEventListener('wheel',function(e){e.preventDefault();CAM.zoom=Math.max(0.3,Math.min(3,(CAM.zoom||1)*(1+Math.sign(e.deltaY)*0.08)));DIRTY=true;},{passive:false});
   cv.addEventListener('dblclick',function(){CAM.zoom=1;CAM.az=1.05;CAM.el=0.42;DIRTY=true;});}
+
+/* per-tab camera views and emphasis: every tab frames the part of the source it is about */
+function addGrp(o,g){o.userData.grp=g;if(o.material&&o.material.opacity!==undefined)o.userData.o0=o.material.opacity;return o;}
+var PV={src:{tx:0,tz:0.6,hw:7.4,az:1.05,el:0.42},ev:{tx:-1.2,tz:0.2,hw:5.6,az:1.30,el:0.22},pa:{tx:0.4,tz:0.2,hw:5.4,az:1.25,el:0.20},
+ vac:{tx:0,tz:0.6,hw:9.0,az:0.75,el:1.00},spec:{tx:0,tz:BZ+1.7,hw:4.2,az:0.35,el:0.30},cmp:{tx:0,tz:BZ+1.7,hw:4.2,az:0.35,el:0.30},game:{tx:0,tz:0.6,hw:8.2,az:1.05,el:0.42}};
+var EMPH={ev:['fil','beam','trap'],pa:['beam','ion'],vac:['beam'],spec:['lens'],cmp:['lens']};
+function applyView(p){var v=PV[p]||PV.src;CAM.tx=v.tx;CAM.tz=v.tz;CAM.hw=v.hw;CAM.d=v.hw*2.4;CAM.az=v.az;CAM.el=v.el;CAM.zoom=1;
+  var keep=EMPH[p],dimAll=p==='game';
+  G3.forEach(function(o){if(!o.material||o.userData.o0===undefined)return;var dim=dimAll||(keep&&o.userData.grp&&keep.indexOf(o.userData.grp)<0);o.material.transparent=true;o.material.opacity=dim?o.userData.o0*0.22:o.userData.o0;});
+  DIRTY=true;}
 var TAGS=[];function tag(txt,v,cls){TAGS.push({txt:txt,p:v,cls:cls||''});}
 function tags(){var box_=$('tags');TAGS.forEach(function(t){if(!t.el){t.el=document.createElement('div');t.el.className='tag rod';t.el.textContent=t.txt;box_.appendChild(t.el);}});
   var w=$('stage').clientWidth,h=$('stage').clientHeight,placed=[];TAGS.forEach(function(t){var v=t.p.clone().project(camera),show=PART!=='game'&&v.z<1&&Math.abs(v.x)<1.05&&Math.abs(v.y)<1.05&&(w>=600||t.cls==='beam');t.el.style.display=show?'':'none';if(!show)return;
@@ -463,7 +473,7 @@ var lastT=0,lastDraw=0;function loop(t){var dt=Math.min(0.05,(t-lastT)/1000);las
   if(PLAY&&PART!=='game'){var n=Math.ceil(SPD);for(var k=0;k<n;k++)step(dt*SPD/n);syncScene();DIRTY=true;if(t-lastDraw>250){lastDraw=t;drawSpectrum();status();tread();}}
   if(DIRTY&&renderer){placeCam();renderer.render(scene,camera);tags();DIRTY=false;}requestAnimationFrame(loop);}
 function setPart(p){if(p===PART)return;PART=p;PLAY=p!=='game';document.querySelectorAll('.parts button[data-part]').forEach(function(b){if(b.dataset.part===p)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
-  if(p==='game'){clear3D();if(!GM.q)newRound();renderCtl();refresh();}else{if(p!=='vac'&&S.P>1e-5)S.P=1e-6;if(p!=='ev'&&S.eV!==70)S.eV=70;CAM.zoom=1;rerun(true);renderCtl();}history.replaceState(null,'','#'+p);}
+  if(p==='game'){if(!GM.q)newRound();build3D();renderCtl();refresh();}else{if(p!=='vac'&&S.P>1e-5)S.P=1e-6;if(p!=='ev'&&S.eV!==70)S.eV=70;CAM.zoom=1;rerun(true);renderCtl();}history.replaceState(null,'','#'+p);}
 function setLook(l){document.documentElement.setAttribute('data-look',l);$('lookA').setAttribute('aria-pressed',String(l==='figure'));$('lookB').setAttribute('aria-pressed',String(l==='vacuum'));if(PART!=='game')build3D();renderCtl();refresh();}
 var SCROLLQ='(max-width:900px) and (orientation:portrait),(max-width:700px) and (min-height:541px)',LANDQ='(orientation:landscape) and (max-height:540px)',EQCLOSED=false;
 function layoutKind(){return window.matchMedia(SCROLLQ).matches?'scroll':(window.matchMedia(LANDQ).matches?'land':'desk');}
